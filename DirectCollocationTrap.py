@@ -61,7 +61,7 @@ class DirectCollocation:
         lbw += [-15] * self.N # control constraints
         ubw += [15] * self.N # control constraints
 
-        # boundar constraints
+        # boundary constraints
         g += [X[:, 0] - self.x0]
         lbg += [*np.zeros(n)]
         ubg += [*np.zeros(n)]

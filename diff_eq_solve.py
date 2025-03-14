@@ -17,7 +17,7 @@ def pend(y, t, b, c):
 t = np.linspace(0, 5, 500)
 y0 = [np.pi, 0.1]
 
-b = 0.25
+b = 0.27
 c = 5.0
 
 sol = odeint(pend, y0, t, args=(b, c))
