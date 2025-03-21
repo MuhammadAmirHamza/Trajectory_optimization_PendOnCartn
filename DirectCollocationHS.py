@@ -63,9 +63,9 @@ class HermiteSimpsonDirectCollocation:
 
     # constraints on the decision variables
     lbw += [-inf] * n * self.N + [-inf] * n * (self.N - 1)
-    lbw += [-15] * 1 * self.N + [-15] * 1 * (self.N - 1)
+    lbw += [-25] * 1 * self.N + [-15] * 1 * (self.N - 1)
     ubw += [inf] * n * self.N + [inf] * n * (self.N - 1)
-    ubw += [15]  * 1 * self.N +  [15] * 1 * (self.N - 1)
+    ubw += [25]  * 1 * self.N +  [15] * 1 * (self.N - 1)
 
     # boundary constraints
     g += [X[:, 0] - self.x0]

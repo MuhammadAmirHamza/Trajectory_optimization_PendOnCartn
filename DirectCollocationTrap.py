@@ -13,9 +13,9 @@ class DirectCollocation:
                  x0 = [0, pi, 0, 0], xf = [0,0,0,0],
                  Q = np.eye(4) * 4,
                  R = 2,
-                 Qf = np.eye(4) * 20,
+                 Qf = np.eye(4) * 200,
                  t0 = 0,
-                 tf = 5, 
+                 tf = 2, 
                  N = 250,
                  ):
         self.sys = sys
@@ -61,13 +61,14 @@ class DirectCollocation:
         lbw += [-15] * self.N # control constraints
         ubw += [15] * self.N # control constraints
 
-        # boundary constraints
+        # boundar constraints
         g += [X[:, 0] - self.x0]
         lbg += [*np.zeros(n)]
         ubg += [*np.zeros(n)]
-        g += [X[:, self.N -1] - self.xf]
-        lbg += [*np.zeros(n)]
-        ubg += [*np.zeros(n)]
+        # g += [X[:, self.N -1] - self.xf]
+        # lbg += [*np.zeros(n)]
+        # ubg += [*np.zeros(n)]
+
 
         # trapezoidal constraint
         for i in range(self.N - 1):
@@ -83,9 +84,10 @@ class DirectCollocation:
             lbg += [*np.zeros(n)]
             ubg += [*np.zeros(n)]
 
-            J += cost(xk, uk)
+            J += self.dt * 0.5 * (cost(xk, uk) + cost(xk1, uk1))
         # terminal cost
-        J += xk1.T @ self.Qf @ xk1
+        x = X[:, -1]
+        J += x.T @ self.Qf @ x
 
         # initial guess (equilibrium point)
         for i in range(n):
@@ -113,7 +115,7 @@ class DirectCollocation:
         theta = np.zeros(self.N)
         theta_dot = np.zeros(self.N)
         state = DM(initial_cond)
-        lin_pts = 25
+        lin_pts = 20
         # discretize the system
         sys_dics = integrator('disc_sys', 'cvodes', self.sys, 0, self.dt/lin_pts)
         for i in range(self.N ):
@@ -146,6 +148,14 @@ class DirectCollocation:
             org_vel[i] = float(state[2])
             org_theta_dot[i] = float(state[3])
         
+        plt.plot(org_pos, label = 'position')
+        plt.plot(org_theta, label = 'theta')
+        plt.plot(org_vel, label = 'vel')
+        plt.plot(org_theta_dot, label = 'theta dot')
+        plt.legend()
+        plt.plot()
+
+        plt.figure()
         plt.plot(org_theta, org_theta_dot, label = 'ang. trajectory')
         # Add arrows at specific points
         for i in range(0, len(org_theta), 20):  # Add an arrow every 20 points
@@ -153,7 +163,7 @@ class DirectCollocation:
             dy = org_theta_dot[i+1] - org_theta_dot[i]
             plt.arrow(org_theta[i], org_theta_dot[i], dx, dy, 
                     shape='full', lw=0, length_includes_head=True, 
-                    head_width=0.5, head_length=0.5, color='red')
+                    head_width=0.5, head_length=0.5, color='red')        
         plt.title('Direct Collocation (Trapzoidal)')
         plt.legend()
         plt.xlabel('angular pos.')
@@ -182,17 +192,33 @@ class DirectCollocation:
         plt.show()
 
         # plt.figure()
+        
         # plt.plot(pos)
         # plt.plot(vel)
         # plt.show()
+    
+    def save_data(self):
+        data = {
+            "t0" : self.t0,
+            "tf" : self.tf,
+            "x0" : self.x0,
+            "xf" : self.xf,
+            "sys" : "pendulum",
+            "N" : self.N,
+            "Q" : self.Q,
+            "R" : self.R,
+            "Qf" : self.Qf,
+            "u_opt" : self.opt_control_trap
+        }
+  
+        # dynamic naming
+        i = 1
+        while os.path.exists(f"DirectCollocationTrapResults/data_{i}.pkl"):
+            i += 1
+        joblib.dump(data, f'DirectCollocationTrapResults/data_{i}.pkl')
 
 if __name__ == "__main__":
     sys = PendulumOnCart().model()
-    shoot = DirectCollocation(N = 250)
+    shoot = DirectCollocation(N = 250, tf = 2)
     opt_states, opt_control = shoot.optimize_trapezoidal()
 shoot.simulation(u_opt = opt_control, initial_cond = [0, pi - 0.2, 0, 0])
-    #%%
-# plt.plot(opt_states[0, :], label = 'lin_pos')
-# plt.plot(opt_states[1, :], label = 'ang_pos')
-# plt.plot(opt_states[2, :], label = 'lin_vel')
-# plt.plot(opt_states[3, :], label = 'ang_vel')
